@@ -1,7 +1,6 @@
 
 package no.finntech.cc;
 
-import java.util.Collections;
 import java.util.List;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -26,17 +25,17 @@ public final class Main {
         String keyspace = opts.valueOf(keyspaceSpec);
         String scope = opts.valueOf(scopeSpec);
 
+        CassandraRepository repo = new CassandraRepository(hosts, port, keyspace);
+
         if (opts.has(valueSpec)) {
             String key = opts.valueOf(keySpec);
             String value = opts.valueOf(valueSpec);
-            // @todo set some value
+            repo.setValue(scope, key, value);
         } else if (opts.has(keySpec)) {
-            // @todo get some value
-            String value = "@todo get some value";
+            String value = repo.getValue(scope, opts.valueOf(keySpec));
             System.out.println(value);
         } else {
-            // @todo set some values
-            Collections.singletonMap("test-key", "test-value").entrySet().stream().forEach((entries) -> {
+            repo.getValues(scope).entrySet().stream().forEach((entries) -> {
                 System.out.println(entries.getKey() + " --> " + entries.getValue());
             });
         }
