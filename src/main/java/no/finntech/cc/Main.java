@@ -2,6 +2,7 @@
 package no.finntech.cc;
 
 import java.util.List;
+import java.util.Optional;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -10,7 +11,9 @@ import joptsimple.OptionSpec;
 public final class Main {
 
     public static void main(final String[] args) {
+
         OptionParser parser = new OptionParser();
+
         OptionSpec<String> hostSpec = parser.accepts("host").withRequiredArg().defaultsTo("localhost");
         OptionSpec<Integer> portSpec = parser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(9042);
         OptionSpec<String> keyspaceSpec = parser.accepts("keyspace").withRequiredArg().required();
@@ -25,19 +28,23 @@ public final class Main {
         String keyspace = opts.valueOf(keyspaceSpec);
         String scope = opts.valueOf(scopeSpec);
 
-        CassandraRepository repo = new CassandraRepository(hosts, port, keyspace);
+        try (CassandraRepository repo = new CassandraRepository(hosts, port, keyspace)) {
 
-        if (opts.has(valueSpec)) {
-            String key = opts.valueOf(keySpec);
-            String value = opts.valueOf(valueSpec);
-            repo.setValue(scope, key, value);
-        } else if (opts.has(keySpec)) {
-            String value = repo.getValue(scope, opts.valueOf(keySpec));
-            System.out.println(value);
-        } else {
-            repo.getValues(scope).entrySet().stream().forEach((entries) -> {
-                System.out.println(entries.getKey() + " --> " + entries.getValue());
-            });
+            if (opts.has(valueSpec)) {
+                String key = opts.valueOf(keySpec);
+                String value = opts.valueOf(valueSpec);
+                repo.setValue(scope, key, value);
+            } else if (opts.has(keySpec)) {
+                Optional<String> value = repo.getValue(scope, opts.valueOf(keySpec));
+                if (value.isPresent()) {
+                    System.out.println(value);
+                }
+            } else {
+                repo.getValues(scope).entrySet().stream().forEach((entries) -> {
+                    System.out.println(entries.getKey() + " --> " + entries.getValue());
+                });
+            }
+
         }
         System.exit(0);
     }

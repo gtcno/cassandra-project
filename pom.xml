@@ -12,7 +12,7 @@
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
-            <version>2.0.4</version>
+            <version>2.0.5</version>
         </dependency>
 
         <dependency>
@@ -30,6 +30,12 @@
             <groupId>net.sf.jopt-simple</groupId>
             <artifactId>jopt-simple</artifactId>
             <version>4.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
         </dependency>
     </dependencies>
 
@@ -64,6 +70,74 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>reserve-network-port</id>
+                        <goals>
+                            <goal>reserve-network-port</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <portNames>
+                                <portName>cassandra.native_transport.port</portName>
+                                <portName>cassandra.rpc.port</portName>
+                            </portNames>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>cassandra-maven-plugin</artifactId>
+                <version>2.0.0-1</version>
+                <configuration>
+                    <rpcPort>${cassandra.rpc.port}</rpcPort>
+                    <startNativeTransport>true</startNativeTransport>
+                    <nativeTransportPort>${cassandra.native_transport.port}</nativeTransportPort>
+                    <addTestClasspath>true</addTestClasspath>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>test-cassandra-start</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>delete</goal>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-cassandra-stop</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>delete</goal>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                  <dependency>
+                    <groupId>org.apache.cassandra</groupId>
+                    <artifactId>cassandra-all</artifactId>
+                    <version>2.0.10</version>
+                  </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <inherited>true</inherited>
+              <configuration>
+                <systemPropertyVariables combine.children="append">
+                    <cassandra.port>${cassandra.native_transport.port}</cassandra.port>
+                </systemPropertyVariables>
+              </configuration>
             </plugin>
         </plugins>
     </build>
